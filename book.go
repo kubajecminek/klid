@@ -39,7 +39,7 @@ type Record struct {
 func GeneralLedger(txs Transactions) map[string]Account {
 	m := make(map[string]Account)
 	for _, tx := range txs {
-		// receive the records -> appendRecord new record -> asign it back to the map
+		// receive the records -> appendRecord new record -> assign it back to the map
 		// this is a workaround, see this issue https://github.com/golang/go/issues/3117
 		// Append the record on debit side to the account's records.
 		a := m[tx.DebitAccount]

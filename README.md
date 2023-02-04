@@ -8,7 +8,7 @@
  2. Run
 
  	```shell
- 	      make build
+ 	make build
  	```
 
 ## Manual

@@ -10,4 +10,4 @@ test:
  
 clean:
 	go clean
-	rm -rf out/bin/klid-cli out/bin/klid-cui
+	rm out/bin/klid-cli out/bin/klid-cui

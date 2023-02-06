@@ -71,6 +71,7 @@ func BenchmarkParseTransactions(b *testing.B) {
 
 // I've tried to implement ParseTransactionsAsync which does exactly the same thing as ParseTransactions
 // but concurrently. Untfortunately, this implementation is roughly 2x slower than basic non-concurrent parsing.
+// TODO: I really need to learn how concurrency works.
 // goos: linux
 // goarch: amd64
 // pkg: klid

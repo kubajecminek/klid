@@ -17,7 +17,8 @@ func main() {
 	app.Copyright = "klid Copyright (C) 2023"
 	app.CustomAppHelpTemplate = MyAppHelpTemplate
 	app.Authors = []*cli.Author{{
-		Email: "k@jcmnk.xyz",
+		Name:  "Jakub Ječmínek",
+		Email: "esprit.pristani0z@icloud.com",
 	}}
 
 	app.Commands = []*cli.Command{

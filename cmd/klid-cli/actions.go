@@ -3,46 +3,70 @@ package main
 import (
 	"fmt"
 	"klid"
+	"log"
 	"os"
+	"time"
 
 	"github.com/urfave/cli/v2"
 )
 
 func journalAction(c *cli.Context) error {
 	txs := c.App.Metadata["txs"].(klid.Transactions)
-	if c.Bool("u") { // filter by account
-		account := pickAccount()
+	account := c.String("u")    // account value
+	startDate := c.String("od") // start date value
+	endDate := c.String("do")   // end date value
+
+	// FIXME: Is there some more aestetic way of accomplishing the same thing?
+	if account != "" {
 		txs.FilterByAccount(account)
 	}
-	if c.Bool("o") { // filter by date
-		startDate, endDate := pickDate()
-		txs.FilterByDate(startDate, endDate)
+
+	if startDate != "" {
+		start, err := time.Parse(klid.DateLayout, startDate)
+		if err != nil {
+			log.Fatalln("Chyba příkazu: Datum bylo zadané ve špatném formátu")
+		}
+		txs.FilterFrom(start)
 	}
+
+	if endDate != "" {
+		end, err := time.Parse(klid.DateLayout, endDate)
+		if err != nil {
+			log.Fatalln("Chyba příkazu: Datum byo zadané ve špatném formátu")
+		}
+		txs.FilterTo(end)
+	}
+
 	klid.FormattedJournal(txs, os.Stdout)
 	return nil
 }
 
 func bookAction(c *cli.Context) error {
 	txs := c.App.Metadata["txs"].(klid.Transactions)
-	switch c.Bool("v") {
-	case true: // return book for all accounts
-		accounts := klid.UniqueAccounts(txs)
-		for _, acc := range accounts {
-			accLedger := klid.GeneralLedger(txs)
-			fmt.Printf("Hlavní kniha účtu: %s\n", acc)
-			klid.FormattedBook(accLedger[acc], os.Stdout)
-		}
-	default: // return book for selected account
-		acc := pickAccount()
-		accLedger := klid.GeneralLedger(txs)
-		if val, ok := accLedger[acc]; !ok {
+	allAccounts := c.Bool("v")
+	account := c.String("u")
+	accLedger := klid.GeneralLedger(txs)
+
+	switch {
+	case account != "":
+		if val, ok := accLedger[account]; !ok {
 			fmt.Printf("   Zadejte celý účet.\n")
 			for k := range accLedger {
 				fmt.Printf("     - %s\n", k)
 			}
 
 		} else {
+			fmt.Printf("Hlavní kniha účtu: %s\n", account)
 			klid.FormattedBook(val, os.Stdout)
+		}
+	case allAccounts == true:
+		fallthrough
+	default:
+		accounts := klid.UniqueAccounts(txs)
+		for _, acc := range accounts {
+			accLedger := klid.GeneralLedger(txs)
+			fmt.Printf("Hlavní kniha účtu: %s\n", acc)
+			klid.FormattedBook(accLedger[acc], os.Stdout)
 		}
 
 	}

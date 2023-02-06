@@ -5,16 +5,28 @@ import (
 	"time"
 )
 
-// FilterByDate overwrites the slice only with transactions that occured in
-// a specified time range.
-func (txs *Transactions) FilterByDate(startDate, endDate time.Time) {
+// FilterTo removes transactions that occured after endDate
+func (txs *Transactions) FilterTo(endDate time.Time) {
 	oldSlice := *txs
 	var newSlice Transactions
-	start := startDate.Add(-1 * time.Second)
 	end := endDate.Add(time.Second)
 
 	for _, tx := range oldSlice {
-		if tx.Date.After(start) && tx.Date.Before(end) {
+		if tx.Date.Before(end) {
+			newSlice = append(newSlice, tx)
+		}
+	}
+	*txs = newSlice
+}
+
+// FilterFrom removes transactions that occured before startDate
+func (txs *Transactions) FilterFrom(startDate time.Time) {
+	oldSlice := *txs
+	var newSlice Transactions
+	start := startDate.Add(-1 * time.Second)
+
+	for _, tx := range oldSlice {
+		if tx.Date.After(start) {
 			newSlice = append(newSlice, tx)
 		}
 	}

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"klid"
 	"log"
 	"os"
@@ -11,17 +10,17 @@ import (
 
 func argTest(c *cli.Context) error {
 	if c.NArg() < 1 {
-		return fmt.Errorf("Nebyl zadán název deníku")
+		log.Fatalln("Chyba příkazu: Nebyl zadán název deníku")
 	}
 	filename := c.Args().Get(0)
 	csvFile, err := os.Open(filename)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln("Interní chyba:", err)
 	}
 
 	c.App.Metadata["txs"], err = klid.ParseTransactions(csvFile, true)
 	if err != nil {
-		log.Fatalln("Chyba:", err)
+		log.Fatalln("Interní chyba:", err)
 	}
 	return nil
 }
@@ -29,20 +28,22 @@ func argTest(c *cli.Context) error {
 var (
 	cmdJournal cli.Command = cli.Command{
 		Name:    "denik",
-		Aliases: []string{"d", "den"},
-		Usage:   "Vrátí formátovaný a seřazený účetní deník",
+		Aliases: []string{"d"},
+		Usage:   "Účetní deník",
 		Action:  journalAction,
 		Flags: []cli.Flag{
-			&cli.BoolFlag{
+			&cli.StringFlag{
 				Name:    "ucet",
-				Usage:   "Zobrazí deník pro daný účet",
+				Usage:   "pouze jeden konkrétní účet",
 				Aliases: []string{"u"},
 			},
-
-			&cli.BoolFlag{
-				Name:    "obdobi",
-				Usage:   "Zobrazí deník pro zvolené období",
-				Aliases: []string{"o"},
+			&cli.StringFlag{
+				Name:  "od",
+				Usage: "časový filtr - začátek",
+			},
+			&cli.StringFlag{
+				Name:  "do",
+				Usage: "časový filtr - konec",
 			},
 		},
 		Before:             argTest,
@@ -52,12 +53,17 @@ var (
 	cmdBook cli.Command = cli.Command{
 		Name:    "kniha",
 		Aliases: []string{"k"},
-		Usage:   "Vrátí hlavní knihu pro daný účet",
+		Usage:   "Hlavní kniha",
 		Action:  bookAction,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{Name: "vse",
-				Usage:   "Zobrazí hlavní knihu pro všechny dostupné účty",
+				Usage:   "všechny účty",
 				Aliases: []string{"v"},
+			},
+			&cli.StringFlag{
+				Name:    "ucet",
+				Usage:   "pouze jeden konkrétní účet",
+				Aliases: []string{"u"},
 			},
 		},
 		Before:             argTest,
@@ -67,7 +73,7 @@ var (
 	cmdAccounts cli.Command = cli.Command{
 		Name:               "ucty",
 		Aliases:            []string{"u"},
-		Usage:              "Vrátí seznam všech použitých účtů",
+		Usage:              "Seznam všech použitých účtů",
 		Action:             accountsAction,
 		Before:             argTest,
 		CustomHelpTemplate: MyCommandHelpTemplate,

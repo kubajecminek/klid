@@ -34,7 +34,7 @@ klid.exe [Příkaz] [SOUBOR]
 Pokud máte uložený CSV soubor (například `example.csv`) vedle `klidu`, pak účetní deník vygenerujete pomocí příkazu `d` nebo `denik`.
 
 ```
-klid.exe d example.csv
+klid.exe denik example.csv
 ```
 
 Výstup:
@@ -60,16 +60,17 @@ Výstup:
 
 Deník bude seřazen chronologicky od nejstarší operace po nejnovější a uspořádán do hezké tabulky.
 Deník je možné filtrovat:
-  - Podle účtu s argumentem `--ucet`.
-  - Podle období s argumentem `--obdobi`.
+  - Podle účtu s argumentem `--ucet <UCET>`.
+  - Podle období s argumenty `--od <DD.MM.YYYY>` a `--do <DD.MM.YYYY>`.
 
-Pozn.: Oba argumenty je možné kombinovat.
+Pozn.: Argumenty je možné kombinovat.
 
 ### Příklad č. 2 - Generování účetní knihy pro daný účet
-Pro hlavní knihu účtů použijte příkaz `k` nebo `kniha`. Následně vložíte číslo účtu. 
+Pro hlavní knihu účtů použijte příkaz `k` nebo `kniha`. Tento příkaz vygeneruje účetní knihu pro všechny účty.
+Pokud potřebujete vygenerovat hlavní knihu pouze pro jeden konkrétní účet, použijte argument `--ucet <UCET>`
 
 ```
-klid.exe k example.csv
+klid.exe kniha --ucet 221000 example.csv
 ```
 
 Výstup:
@@ -87,13 +88,11 @@ Výstup:
 +------------+--------+------------------------------+-----------+-----------+------------+-----------+
 ```
 
-Pozn.: Hlavní knihu je možné vygenerovat pro všechny účty zároveň pomocí argumentu `--vse`.
-
 ### Příklad č. 3 - Zobrazení všech použitých účtů
 Příkazem `u` nebo `ucty` se vám zobrazí všechny unikátní účty, které jste použili na straně Má dáti a nebo Dal.
 
 ```
-klid.exe u example.csv
+klid.exe ucty example.csv
 ```
 
 Výstup:

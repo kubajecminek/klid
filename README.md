@@ -1,4 +1,4 @@
-# Klid
+# Klid ![Version][go-version-badge]![License][license-badge]
  `Klid` is terminal based accounting program which targets Czech audiance. The name `klid` comes from well-known propriatary software called `Pohoda`.
 
 [![gif with examples][examples-link]][examples-link]
@@ -23,3 +23,5 @@
 
 
 [examples-link]:   https://raw.githubusercontent.com/kubajecminek/klid/master/docs/example-gif.svg
+[go-version-badge]: https://img.shields.io/github/go-mod/go-version/kubajecminek/klid
+[license-badge]: https://img.shields.io/github/license/kubajecminek/klid

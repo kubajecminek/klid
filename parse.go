@@ -11,7 +11,17 @@ import (
 
 // DateLayout is date format used for parsing transactions and printing.
 // It represents DD.MM.YYYY.
-const DateLayout = "02.01.2006"
+const (
+	date = iota
+	document
+	amount
+	description
+	debitAccount
+	creditAccount
+	note
+
+	DateLayout = "02.01.2006"
+)
 
 /*
 From wikipedia:
@@ -92,25 +102,25 @@ func parseRecord(record []string) (*Transaction, error) {
 		return nil, errors.New("not enough CSV columns")
 	}
 	// parse date
-	date, err := time.Parse(DateLayout, record[0])
+	parsedDate, err := time.Parse(DateLayout, record[date])
 	if err != nil {
 		return nil, err
 	}
 
 	// parse amount
-	amount := new(big.Rat)
-	if _, ok := amount.SetString(record[2]); !ok {
+	parsedAmount := new(big.Rat)
+	if _, ok := parsedAmount.SetString(record[amount]); !ok {
 		return nil, err
 	}
 
 	return &Transaction{
-		Date:          date,
-		Document:      record[1], // second column in CSV line
-		Amount:        amount,
-		Description:   record[3], // third column in CSV line, etc..
-		DebitAccount:  record[4],
-		CreditAccount: record[5],
-		Note:          record[6],
+		Date:          parsedDate,
+		Document:      record[document],
+		Amount:        parsedAmount,
+		Description:   record[description],
+		DebitAccount:  record[debitAccount],
+		CreditAccount: record[creditAccount],
+		Note:          record[note],
 	}, nil
 }
 

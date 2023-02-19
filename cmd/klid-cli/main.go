@@ -12,7 +12,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "klid"
 	app.Usage = "Účetní software pro tvůj terminál"
-	app.Version = "0.1.1"
+	app.Version = "0.1.2"
 	app.Compiled = time.Now()
 	app.Copyright = "klid Copyright (C) 2023"
 	app.CustomAppHelpTemplate = MyAppHelpTemplate

@@ -12,16 +12,27 @@ func argTest(c *cli.Context) error {
 	if c.NArg() < 1 {
 		log.Fatalln("Chyba příkazu: Nebyl zadán název deníku")
 	}
+
 	filename := c.Args().Get(0)
-	csvFile, err := os.Open(filename)
+	file, err := os.Open(filename)
 	if err != nil {
 		log.Fatalln("Interní chyba:", err)
 	}
 
-	c.App.Metadata["txs"], err = klid.ParseTransactions(csvFile, true)
+	noSkipFirst := c.Bool("bez-hlavicky")
+
+	var parser klid.Parser
+	switch c.String("format") {
+	default:
+		// TODO: Implement more parsers
+		parser = klid.CSVParser{SkipFirst: !noSkipFirst}
+	}
+
+	c.App.Metadata["txs"], err = parser.Parse(file)
 	if err != nil {
 		log.Fatalln("Interní chyba:", err)
 	}
+
 	return nil
 }
 

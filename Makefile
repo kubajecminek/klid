@@ -7,6 +7,9 @@ build:
  
 test:
 	go test
+
+bench:
+	go test -bench=.
  
 clean:
 	go clean

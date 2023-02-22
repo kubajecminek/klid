@@ -8,11 +8,12 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
 
-func TestParseTransactions(t *testing.T) {
+func TestCSVParser(t *testing.T) {
 	tests := []struct {
 		Name   string
 		Input  string
@@ -46,90 +47,136 @@ func TestParseTransactions(t *testing.T) {
 		}},
 	}}
 
+	csvParser := CSVParser{SkipFirst: true}
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
-			out, err := ParseTransactions(strings.NewReader(tt.Input), true)
+			out, err := csvParser.Parse(strings.NewReader(tt.Input))
 			if err != nil {
 				t.Fatal(err)
 			}
 			if !reflect.DeepEqual(out, tt.Output) {
-				t.Errorf("ParseTransactions error: case %s", tt.Name)
+				t.Errorf("CSVParser error: case %s", tt.Name)
 			}
 		})
 	}
 }
 
-func BenchmarkParseTransactions(b *testing.B) {
+func BenchmarkCSVParser(b *testing.B) {
 	csvFile, err := os.Open("docs/example.csv")
 	if err != nil {
 		b.Fatal(err)
 	}
+	csvParser := CSVParser{SkipFirst: true}
 	for n := 0; n < b.N; n++ {
-		ParseTransactions(csvFile, true)
+		csvParser.Parse(csvFile)
 	}
 }
 
-// I've tried to implement ParseTransactionsAsync which does exactly the same thing as ParseTransactions
+// I've tried to implement CSVParse.AsyncParse() which does exactly the same thing as CSVParser.Parse()
 // but concurrently. Untfortunately, this implementation is roughly 2x slower than basic non-concurrent parsing.
-// TODO: I really need to learn how concurrency works.
-// goos: linux
-// goarch: amd64
-// pkg: klid
-// BenchmarkParseTransactions-6              400705              2841 ns/op            4192 B/op          2 allocs/op
-// BenchmarkParseTransactionsAsync-6         169406              7094 ns/op            4480 B/op          5 allocs/op
-// BenchmarkLoadExample-6                    419197              2857 ns/op            4192 B/op          2 allocs/op
-// TODO: return error as well
-func BenchmarkParseTransactionsAsync(b *testing.B) {
+// TODO: I really need to learn more about concurrency.
+type CSVReaderMessage struct {
+	row []string
+	e   error
+}
+
+type KlidParserMessage struct {
+	tx *Transaction
+	e  error
+}
+
+func ParseCSVAsync(r io.Reader, skipFirst bool) (Transactions, error) {
+	var txs Transactions
+	csvReaderMessage := make(chan CSVReaderMessage)
+	klidParserMessage := make(chan KlidParserMessage)
+	var wg sync.WaitGroup
+
+	// Goroutine 1
+	wg.Add(1)
+	go func(out chan CSVReaderMessage) {
+		reader := csv.NewReader(r)
+		if skipFirst { // move reader onto the next line
+			reader.FieldsPerRecord = -1
+			reader.Read()
+		}
+		for {
+			row, err := reader.Read()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				out <- CSVReaderMessage{nil, err}
+			}
+			out <- CSVReaderMessage{row, nil}
+		}
+		wg.Done()
+		close(out)
+	}(csvReaderMessage)
+
+	// Goroutine 2
+	// We can spawn more goroutines here, but it doesn't speed up the execution
+	wg.Add(1)
+	go func(in chan CSVReaderMessage, out chan KlidParserMessage) {
+		for {
+			message, ok := <-in
+			if !ok {
+				break
+			}
+			// forward error message
+			if message.e != nil {
+				out <- KlidParserMessage{nil, message.e}
+			}
+
+			parsedDate, err := time.Parse(DateLayout, message.row[date])
+			if err != nil {
+				out <- KlidParserMessage{nil, err}
+			}
+
+			// parse amount
+			parsedAmount := new(big.Rat)
+			if _, ok := parsedAmount.SetString(message.row[amount]); !ok {
+				out <- KlidParserMessage{nil, err}
+			}
+
+			out <- KlidParserMessage{&Transaction{
+				Date:          parsedDate,
+				Document:      message.row[document],
+				Amount:        parsedAmount,
+				Description:   message.row[description],
+				DebitAccount:  message.row[debitAccount],
+				CreditAccount: message.row[creditAccount],
+				Note:          message.row[note],
+			}, nil}
+		}
+		wg.Done()
+		close(out)
+	}(csvReaderMessage, klidParserMessage)
+
+	// Receive the results.
+	for {
+		message, ok := <-klidParserMessage
+		if !ok {
+			break
+		}
+		if message.e != nil {
+			return nil, message.e
+		}
+		txs = append(txs, message.tx)
+	}
+	wg.Wait()
+
+	// Sort and return the results.
+	sort.Sort(byDate(txs))
+	return txs, nil
+}
+
+func BenchmarkParseCSVAsync(b *testing.B) {
 	csvFile, err := os.Open("docs/example.csv")
 	if err != nil {
 		b.Fatal(err)
 	}
 	for n := 0; n < b.N; n++ {
-		func(r io.Reader, skipFirst bool) Transactions {
-			var txs Transactions
-			e := make(chan error)
-			results := make(chan *Transaction)
-			records := make(chan []string)
-			// Goroutine 1: read the CSV file and send []string over the channel.
-			go func(out chan []string, e chan<- error) {
-				reader := csv.NewReader(r)
-				for i := 1; true; i++ {
-					record, err := reader.Read()
-					if skipFirst && i == 1 { // skip the first iteration
-						continue
-					}
-					if err == io.EOF {
-						break
-					}
-					if err != nil {
-						e <- err
-					}
-					out <- record
-				}
-				close(out)
-			}(records, e)
-
-			// Goroutine 2: parse []string received over the channel and send
-			// parsed Transaction forward.
-			go func(in chan []string, out chan *Transaction, e chan<- error) {
-				for i := range in {
-					tx, err := parseRecord(i)
-					if err != nil {
-						e <- err
-					}
-					out <- tx
-				}
-				close(out)
-			}(records, results, e)
-
-			// Receive the results.
-			for tx := range results {
-				txs = append(txs, tx)
-			}
-			// Sort and return the results.
-			sort.Sort(byDate(txs))
-			return txs
-		}(csvFile, true)
+		ParseCSVAsync(csvFile, true)
 	}
 }
 

@@ -27,7 +27,7 @@ Výhoda plain textových dat je v jednoduché manipulaci dat (například v prog
 `Klid` je program pro terminál, takže se používá sadou příkazů. Obecně se s programem pracuje následovně (na MS Windows).
 
 ```
-klid.exe [Příkaz] [SOUBOR]
+klid.exe [Globální přepínače] [Příkaz] [Přepínače] [SOUBOR]
 ```
 
 ### Příklad č. 1 - Generování deníku

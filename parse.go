@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-// DateLayout is date format used for parsing transactions and printing.
-// It represents DD.MM.YYYY.
 const (
 	date = iota
 	document
@@ -66,12 +64,20 @@ type Transaction struct {
 // Transactions is a shortcut for []*Transaction.
 type Transactions []*Transaction
 
-// ParseTransactions reads from r and parses CSV data and returns
-// a slice of Transaction.
-func ParseTransactions(r io.Reader, skipFirst bool) (Transactions, error) {
+// Parse is the interface that wraps Parse method.
+// TODO: Provide more information
+type Parser interface {
+	Parse(io.Reader) (Transactions, error)
+}
+
+type CSVParser struct {
+	SkipFirst bool
+}
+
+func (c CSVParser) Parse(r io.Reader) (Transactions, error) {
 	var txs Transactions
 	reader := csv.NewReader(r)
-	if skipFirst { // move reader onto the next line
+	if c.SkipFirst { // move reader onto the next line
 		reader.FieldsPerRecord = -1
 		reader.Read()
 	}
@@ -84,44 +90,37 @@ func ParseTransactions(r io.Reader, skipFirst bool) (Transactions, error) {
 		if err != nil {
 			return nil, err
 		}
-		tx, err := parseRecord(record)
+		if len(record) < 7 {
+			return nil, errors.New("not enough CSV columns")
+		}
+
+		// parse date
+		parsedDate, err := time.Parse(DateLayout, record[date])
 		if err != nil {
 			return nil, err
 		}
+
+		// parse amount
+		parsedAmount := new(big.Rat)
+		if _, ok := parsedAmount.SetString(record[amount]); !ok {
+			return nil, err
+		}
+
+		tx := &Transaction{
+			Date:          parsedDate,
+			Document:      record[document],
+			Amount:        parsedAmount,
+			Description:   record[description],
+			DebitAccount:  record[debitAccount],
+			CreditAccount: record[creditAccount],
+			Note:          record[note],
+		}
+
 		txs = append(txs, tx)
 
 	}
 	sort.Sort(byDate(txs))
 	return txs, nil
-}
-
-// parseRecord takes one line of CSV, parses some fields and
-// returns *Transaction.
-func parseRecord(record []string) (*Transaction, error) {
-	if len(record) < 7 {
-		return nil, errors.New("not enough CSV columns")
-	}
-	// parse date
-	parsedDate, err := time.Parse(DateLayout, record[date])
-	if err != nil {
-		return nil, err
-	}
-
-	// parse amount
-	parsedAmount := new(big.Rat)
-	if _, ok := parsedAmount.SetString(record[amount]); !ok {
-		return nil, err
-	}
-
-	return &Transaction{
-		Date:          parsedDate,
-		Document:      record[document],
-		Amount:        parsedAmount,
-		Description:   record[description],
-		DebitAccount:  record[debitAccount],
-		CreditAccount: record[creditAccount],
-		Note:          record[note],
-	}, nil
 }
 
 // byDate sorts the transactions, well, by date...

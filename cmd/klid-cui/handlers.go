@@ -22,11 +22,12 @@ func init() {
 		log.Fatalf("Zřejmě jste zapomněli zadat název deníku.")
 	} else {
 		filename := os.Args[1]
-		csvFile, err := os.Open(filename)
+		file, err := os.Open(filename)
 		if err != nil {
 			log.Fatal(err)
 		}
-		txs, err = klid.ParseTransactions(csvFile, true)
+		parser := klid.CSVParser{SkipFirst: true}
+		txs, err = parser.Parse(file)
 		if err != nil {
 			log.Fatalf("Chyba při čtení souboru: %s", err)
 		}

@@ -38,6 +38,10 @@ func main() {
 			Name:  "bez-hlavicky",
 			Usage: "zahrne první řádek do seznamu transakcí",
 		},
+		&cli.BoolFlag{
+			Name:  "stdin",
+			Usage: "přečte vstupní soubor ze standardního vstupu",
+		},
 	}
 
 	err := app.Run(os.Args)

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"io"
 	"klid"
 	"log"
 	"os"
@@ -9,14 +11,22 @@ import (
 )
 
 func argTest(c *cli.Context) error {
-	if c.NArg() < 1 {
+	if c.NArg() < 1 && c.Bool("stdin") == false {
 		log.Fatalln("Chyba příkazu: Nebyl zadán název deníku")
 	}
 
-	filename := c.Args().Get(0)
-	file, err := os.Open(filename)
-	if err != nil {
-		log.Fatalln("Interní chyba:", err)
+	var reader io.Reader
+	var err error
+
+	if c.Bool("stdin") {
+		reader = bufio.NewReader(os.Stdin)
+	} else {
+		filename := c.Args().Get(0)
+		reader, err = os.Open(filename)
+		if err != nil {
+			log.Fatalln("Interní chyba:", err)
+		}
+		defer reader.(*os.File).Close()
 	}
 
 	noSkipFirst := c.Bool("bez-hlavicky")
@@ -28,7 +38,7 @@ func argTest(c *cli.Context) error {
 		parser = klid.CSVParser{SkipFirst: !noSkipFirst}
 	}
 
-	c.App.Metadata["txs"], err = parser.Parse(file)
+	c.App.Metadata["txs"], err = parser.Parse(reader)
 	if err != nil {
 		log.Fatalln("Interní chyba:", err)
 	}

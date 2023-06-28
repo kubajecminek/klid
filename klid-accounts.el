@@ -32,9 +32,11 @@
 (require 'klid-transaction)
 (require 'klid-export)
 
-(defun klid-accounts-sort (seq)
-  "Sort SEQ using `string-lessp' predicate."
-  (cl-sort seq 'string-lessp :key 'downcase))
+(defun klid-accounts-sort (accounts)
+  "Sort ACCOUNTS using `string-lessp' predicate.
+
+ACCOUNTS is a list of strings."
+  (cl-sort accounts 'string-lessp :key 'downcase))
 
 (defun klid-accounts-unique (txs)
   "Return unique accounts from TXS that were used on either debit or credit side.

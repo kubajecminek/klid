@@ -4,25 +4,21 @@ on: [push]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        emacs_version:
+          - 27.1
+          - 28.1
+          - 28.2
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Go
-        uses: actions/setup-go@v3
+      - uses: purcell/setup-emacs@master
         with:
-          go-version: 1.19
-
-      - name: Install dependencies
-        run: |
-          go get -d ./...
-
-      - name: Build
-        run: make build
-
-      - name: Test
-        run: make test
-
-      - name: Benchmarks
-        run: make bench
+          version: ${{ matrix.emacs_version }}
+      - uses: actions/checkout@v2
+      - name: Run tests
+        run: 'emacs -batch -Q -L . \
+              -l klid-mode.el -l klid-datetime.el -l klid-transaction.el -l klid-filter.el -l klid-ledger.el \
+              -l klid-accounts.el -l test/klid-datetime-tests.el -l test/klid-filter-tests.el -l test/klid-ledger-tests.el -l test/klid-transaction-tests.el \
+              -f ert-run-tests-batch-and-exit'

@@ -1,0 +1,60 @@
+* Klid
+~Klid~ (or ~klid-mode~) is Emacs based accounting program which targets Czech audience. The name ~klid~ comes
+from well-known proprietary software called ~Pohoda~.
+
+** Install
+In order to install ~klid-mode~, you must:
+ 1. Download the source code
+ 2. Update your ~load-path~ if necessary
+ 3. Run ~M-x load-library RET klid-mode~, or evaluate following expression
+    #+BEGIN_SRC elisp
+      ;; Load klid-mode
+      (require 'klid-mode)
+    #+END_SRC
+
+** How to use
+This Emacs package provides a minor mode for performing common accounting operations. Klid currently takes
+input only from `org-mode' tables. To activate it, just type ~M-x klid-mode~.
+
+Underlying org-mode table must be in a very specific format for Klid to work properly. It must include these columns:
+ 1. Date in ČSN 01 6910 format (DD.MM.YYYY)
+ 2. Accounting document ("ID1")
+ 3. Non-zero amount (with dot as decimal separator)
+ 4. Brief description
+ 5. Debit account ("221")
+ 6. Credit account ("311")
+ 7. Note (can be blank)
+
+Such table might look as follows:
+
+#+BEGIN_SRC
+ |      Datum | Doklad      | Částka | Popis                        |     MD |    Dal | Poznámka    |
+ | 01.01.2020 | ID001       | 100000 | Počáteční stav - 411         | 701000 | 411000 |             |
+ | 01.01.2020 | ID001       |  50000 | Počáteční stav - 221         | 221000 | 701000 |             |
+ | 01.01.2020 | ID001       |  50000 | Počáteční stav - 211         | 211000 | 701000 |             |
+ | 02.01.2020 | FAP001      |  15000 | Nájemné na únor              | 518001 | 321000 |             |
+ | 02.01.2020 | BV1         |  15000 | Platba nájemného             | 321000 | 221000 |             |
+ | 15.02.2020 | FAV15022020 | 100000 | VyFa za prodej služeb        | 311000 | 602001 |             |
+ | 20.02.2020 | BV2         | 100000 | Platba faktury od odběratele | 221000 | 311000 | FAV15022020 |
+ | 31.12.2020 | ID002       | 100000 | Konečný stav - 411           | 411000 | 702000 |             |
+ | 31.12.2020 | ID002       |  50000 | Konečný stav - 211           | 702000 | 211000 |             |
+ | 31.12.2020 | ID002       | 135000 | Konečný stav - 221           | 702000 | 221000 |             |
+ | 31.12.2020 | ID002       |  15000 | Uzavření účtu - 518001       | 710000 | 518001 |             |
+ | 31.12.2020 | ID002       | 100000 | Uzavření účtu - 602001       | 602001 | 710000 |             |
+ | 31.12.2020 | ID002       |  85000 | Zaúčtování zisku             | 710000 | 702000 |             |
+#+END_SRC
+
+You can invoke any ~klid-mode~ command with the table at point.
+
+*** Important commands
+
+| Function                    | Default keybind |
+|-----------------------------+-----------------|
+| klid-mode-filter-by-account | C-c k f a       |
+| klid-mode-filter-by-date    | C-c k f d       |
+| klid-mode-general-ledger    | C-c k g         |
+| klid-mode-list-accounts     | C-c k l         |
+| klid-mode-all-reports       | C-c k a         |
+
+** License
+This program is licensed under GPLv3, see [[file:LICENSE][LICENSE]].

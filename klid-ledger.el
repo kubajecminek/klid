@@ -37,16 +37,18 @@
 ;;; Code:
 
 (require 'cl-lib)
-(require 'calc)
 (require 'klid-transaction)
 (require 'klid-accounts)
 
 (defun klid-ledger-calc (sym &rest numbers)
   "Perform basic arithmetic operations with `calc' precision.
 
-SYM is a symbol for arithmetic operation ('+, '-, '*, '/).  NUMBERS
-are numbers to add, substract, multiply, etc. Return value is also a
-number."
+SYM is a symbol representing the arithmetic operation to be performed
+\('+', '-', '*', '/').  NUMBERS are the numbers to be used in the
+operation.
+
+The function returns the result as a number."
+  (require 'calc)
   (let* ((numbers-subseq
 	  (cl-subseq numbers 0 (- (length numbers) 1)))
 	 (last-elem (car (last numbers)))
@@ -78,10 +80,11 @@ number."
 
 ;; Hashmap - KEY = account, VAL = account-ledger
 (defun klid-ledger-general-ledger (txs)
-  "Generate the general ledger from TXS.
+  "Create the general ledger from TXS.
 
-TXS is a list of `klid-transaction'.  This funciton returns
-a hash-table where each account is associated with its
+TXS is a list, and each element within the list is itself a list
+with the same structure as `klid-transaction'.  This function returns
+a hash-table where each account is mapped to its corresponding
 `klid-ledger-account-ledger' structure."
   (let ((general-ledger (make-hash-table :test 'equal)))
     (dolist (tx txs)
@@ -145,12 +148,12 @@ indicating whether the update is a debit or credit."
      :total-balance total-balance)))
 
 (defun klid-ledger-export-account-to-table.el (general-ledger account &optional params)
-  "Export ACCOUNT subledger from GENERAL-LEDGER to `org-mode' table.el.
+  "Export ACCOUNT subledger from GENERAL-LEDGER to table.el.
 
-GENERAL-LEDGER is a hash-table where each key is the account (string)
-and value is `klid-ledger-account-ledger' structure.  PARAMS is a property
-list of parameters that can influence the conversion.  All parameters
-from ‘orgtbl-to-generic’ are supported."
+GENERAL-LEDGER is a hash-table where each account is mapped to its corresponding
+`klid-ledger-account-ledger' structure.  PARAMS is a property list of parameters
+that can influence the conversion.  All parameters from ‘orgtbl-to-generic’ are
+supported."
   (let ((account-ledger (gethash account general-ledger))
 	(table nil))
     (if (null account-ledger)
@@ -186,13 +189,13 @@ from ‘orgtbl-to-generic’ are supported."
 
 (defun klid-ledger-export-general-ledger-to-org
     (general-ledger &optional account-prefix params)
-  "Export subledgers from GENERAL-LEDGER to table.el with some additional text.
+  "Export subledgers from GENERAL-LEDGER to table.el with some additional markup.
 
-This functions exports all subledgers from GENERAL-LEDGER that contain
-ACCOUNT-PREFIX.  GENERAL-LEDGER is a hash-table where each key is the account
-\(string) and value is `klid-ledger-account-ledger' structure.  PARAMS
-is a property list of parameters that can influence the conversion.
-All parameters from ‘orgtbl-to-generic’ are supported."
+This function exports subledgers from GENERAL-LEDGER that contain ACCOUNT-PREFIX.
+GENERAL-LEDGER is a hash-table where each account is mapped to its corresponding
+`klid-ledger-account-ledger' structure.  PARAMS is a property list of parameters
+that can influence the conversion.  All parameters from ‘orgtbl-to-generic’ are
+supported."
   (let* ((keys nil)
 	 (sorted-keys nil)
 	 (prefix (or account-prefix "")))

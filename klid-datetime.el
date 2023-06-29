@@ -32,46 +32,57 @@
 
 ;;; Code:
 
-(require 'iso8601)
-
 (define-error 'klid-parse-error "Klid parse error")
 
 (defun klid-datetime-csn-01-6910--match (regexp string)
   (string-match (concat "\\`" regexp "\\'") string))
 
+(defun klid--decoded-time (day month year)
+  "Return simplified `decoded-time' structure.
+
+All unknown values other than DST are returned as nil, and an
+unknown DST value is returned as -1. DAY, MONTH and YEAR are all
+integers."
+  `(nil nil nil ,day ,month ,year nil -1 nil))
+
 (defconst klid-datetime-csn-01-6910--full-date-match
-  "\\([0-9][0-9]\\).?\\([0-9][0-9]\\).\\([+-]?[0-9][0-9][0-9][0-9]\\)"
+  "\\([0-3][0-9]\\).?\\([0-1][0-9]\\).\\([+-]?[0-9][0-9][0-9][0-9]\\)"
   "Regular expression that matches DD.MM.YYYY date format.")
 
 (defun klid-datetime-csn-01-6910-parse (string)
-  "Parse the date in STRING (DD.MM.YYYY) into `decode-time' compatible structure."
+  "Parse the date in STRING (DD.MM.YYYY) into `decoded-time' structure."
   (cond
    ;; DD.MM.YYYY
    ((klid-datetime-csn-01-6910--match klid-datetime-csn-01-6910--full-date-match string)
-    (iso8601--decoded-time
-     :year (string-to-number (match-string 3 string))
-     :month (string-to-number (match-string 2 string))
-     :day (string-to-number (match-string 1 string))
-     ;; FIXME: If we omit hour, minute and second then encode-time does not work
-     :hour 0
-     :minute 0
-     :second 0
-     :zone 0
-     :dst 0
-     ))
+    (klid--decoded-time
+     (string-to-number (match-string 1 string))
+     (string-to-number (match-string 2 string))
+     (string-to-number (match-string 3 string))))
    ;; Add other formats ...
    ;; See iso8601.el
    (t (signal 'klid-parse-error string))))
+
+(defun klid-datetime--encode-time (time)
+  "Convert TIME to a timestamp even if it contains unknown values.
+
+TIME is a list (SECOND MINUTE HOUR DAY MONTH YEAR IGNORED DST ZONE)
+in the style of ‘decode-time’.  Nil values in TIME are replaced with
+0."
+  (encode-time
+   (mapcar (lambda (elem) (or elem 0)) time)))
 
 (defun klid-datetime-to-timestamp (datetime)
   "Convert DATETIME to timestamp.
 
 This function is useful mainly for sorting predicates."
-  (string-to-number (format-time-string "%s" (time-convert (encode-time datetime)))))
+  (string-to-number
+   (format-time-string "%s" (time-convert (klid-datetime--encode-time datetime)))))
 
 (defun klid-datetime-csn-01-6910-to-string (datetime)
-  "Convert DATETIME to ČSN 01 6910 string representation."
-  (format-time-string "%d.%m.%Y" (encode-time datetime)))
+  "Convert DATETIME to ČSN 01 6910 string format.
+
+DATETIME is as `decoded-time' structure."
+  (format-time-string "%d.%m.%Y" (klid-datetime--encode-time datetime)))
 
 (provide 'klid-datetime)
 

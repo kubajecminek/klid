@@ -1,12 +1,12 @@
 * Klid
-~Klid~ (or ~klid-mode~) is Emacs based accounting program which targets Czech audience. The name ~klid~ comes
+~Klid~ (or ~klid-mode~) is Emacs based accounting program that is designed for Czech legal system. The name ~klid~ comes
 from well-known proprietary software called ~Pohoda~.
 
 ** Install
 In order to install ~klid-mode~, you must:
  1. Download the source code
  2. Update your ~load-path~ if necessary
- 3. Run ~M-x load-library RET klid-mode~, or evaluate following expression
+ 3. Run ~M-x load-library RET klid-mode RET~, or evaluate the following expression
     #+BEGIN_SRC elisp
       ;; Load klid-mode
       (require 'klid-mode)
@@ -14,7 +14,7 @@ In order to install ~klid-mode~, you must:
 
 ** How to use
 This Emacs package provides a minor mode for performing common accounting operations. Klid currently takes
-input only from `org-mode' tables. To activate it, just type ~M-x klid-mode~.
+input only from 'org-mode' tables. To activate it, just type ~M-x klid-mode RET~.
 
 Underlying org-mode table must be in a very specific format for Klid to work properly. It must include these columns:
  1. Date in ČSN 01 6910 format (DD.MM.YYYY)

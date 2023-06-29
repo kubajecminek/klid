@@ -27,7 +27,7 @@
 ;;; Commentary:
 ;; This Emacs package provides a minor mode for performing common accounting
 ;; operations.  This program targets Czech audiance.  Klid currently takes
-;; input only from `org-mode' tables.  To activate it, just type 'M-x klid-mode'.
+;; input only from `org-mode' tables.  To activate it, just type 'M-x klid-mode RET'.
 
 ;; Underlying `org-mode' table must be in a very specific format for Klid to
 ;; work properly.  It must include these columns:
@@ -108,9 +108,9 @@ This function takes transactions at point and displays the result in
 (defun klid-mode-filter-by-date (from to)
   "Filter transactions at point by date.
 
-FROM specifies the beginning of the time range and TO the
-end.  This function displays the result in `klid-output-buffer' so that
-transactions at point remain unchanged."
+FROM specifies the beginning of the time range and TO the end.  This
+function displays the result in `klid-output-buffer' so that transactions
+at point remain unchanged."
   (interactive "sFrom (DD-MM-YYYY): \nsTo (DD-MM-YYYY):")
   (klid-mode--display
    #'(lambda (txs)
@@ -135,7 +135,7 @@ transactions at point remain unchanged."
 	(klid-accounts-unique txs)))))
 
 (defun klid-mode-all-reports ()
-  "Display all currently supported accounting reports."
+  "Generate key accounting reports."
   (interactive)
   (klid-mode--display
    #'(lambda (txs)

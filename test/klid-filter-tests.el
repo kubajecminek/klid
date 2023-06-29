@@ -3,7 +3,7 @@
 
 (ert-deftest test-klid-filter-transactions-by-date ()
   (let ((tx1 (make-klid-transaction
-	      :date '(0 0 0 2 1 2020 nil 0 0)
+	      :date '(nil nil nil 2 1 2020 nil -1 nil)
 	      :document "Doc - t1"
 	      :amount 10000
 	      :description "Desc - t1"
@@ -11,7 +11,7 @@
 	      :credit-account "311000"
 	      :note "Note - t1"))
 	(tx2 (make-klid-transaction
-	      :date '(0 0 0 1 1 2020 nil 0 0)
+	      :date '(nil nil nil 1 1 2020 nil -1 nil)
 	      :document "Doc - t2"
 	      :amount 20000
 	      :description "Desc - t2"
@@ -27,7 +27,7 @@
 
 (ert-deftest test-klid-filter-transactions-by-account ()
   (let ((tx1 (make-klid-transaction
-	      :date '(0 0 0 2 1 2020 nil 0 0)
+	      :date '(nil nil nil 2 1 2020 nil -1 nil)
 	      :document "Doc - t1"
 	      :amount 10000
 	      :description "Desc - t1"
@@ -35,7 +35,7 @@
 	      :credit-account "311000"
 	      :note "Note - t1"))
 	(tx2 (make-klid-transaction
-	      :date '(0 0 0 1 1 2020 nil 0 0)
+	      :date '(nil nil nil 1 1 2020 nil -1 nil)
 	      :document "Doc - t2"
 	      :amount 20000
 	      :description "Desc - t2"

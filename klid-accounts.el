@@ -41,7 +41,9 @@ ACCOUNTS is a list of strings."
 (defun klid-accounts-unique (txs)
   "Return unique accounts from TXS that were used on either debit or credit side.
 
-TXS is a list of `klid-transaction'.  Return value is a list of strings."
+TXS is a list, and each element within the list is itself a list
+with the same structure as `klid-transaction'.  Return value is a
+list of strings."
   (let ((accounts nil))
     (dolist (tx txs)
       (push (klid-transaction-debit-account tx) accounts)
@@ -49,7 +51,7 @@ TXS is a list of `klid-transaction'.  Return value is a list of strings."
     (klid-accounts-sort (delete-dups accounts))))
 
 (defun klid-accounts-export-to-table.el (accounts &optional params)
-  "Export ACCOUNTS to `org-mode' table.el.
+  "Export ACCOUNTS to table.el.
 
 ACCOUNTS is a list of strings.  PARAMS is a property list
 of parameters that can influence the conversion.  All parameters
@@ -67,7 +69,7 @@ from ‘orgtbl-to-generic’ are supported."
     (klid-export-orgtbl-to-table.el table params)))
 
 (defun klid-accounts-export-to-org (accounts &optional params)
-  "Export ACCOUNTS to `org-mode' table.el with some additional text.
+  "Export ACCOUNTS to table.el with some additional markup.
 
 ACCOUNTS is a list of strings.  PARAMS is a property list
 of parameters that can influence the conversion.  All parameters

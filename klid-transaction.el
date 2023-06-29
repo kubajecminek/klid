@@ -56,13 +56,14 @@ Both TX1 and TX2 are `klid-transaction' data structures."
 (defun klid-transaction-sort-by-date (txs)
   "Sort TXS chronologically.
 
-TXS is a list of `klid-transaction'."
+TXS is a list, and each element within the list is itself a list
+with the same structure as `klid-transaction'."
   (sort txs 'klid-transaction-earlier-p))
 
 (defun klid-transaction-parse-list (tx)
   "Create `klid-transaction' structure from TX.
 
-TX must be a list containing valid transaction values - date
+TX must be a list that contains valid transaction values - date
 in DD.MM.YYYY format, accounting document ID (string), non-zero
 amount (either string or number), brief description (string),
 debit account (string), credit account (string) and note (string).
@@ -102,7 +103,8 @@ This function iteratively calls `klid-transaction-parse-list'."
 (defun klid-transaction-export-transactions-to-list (txs)
   "Export TXS to list format compatible with `org-table-export' function.
 
-TXS is a list of `klid-transaction'."
+TXS is a list, and each element within the list is itself a list
+with the same structure as `klid-transaction'."
   (mapcar (lambda (tx)
 	    (let ((new-tx (copy-sequence tx)))
 	      (setf (klid-transaction-date new-tx)
@@ -115,8 +117,9 @@ TXS is a list of `klid-transaction'."
 (defun klid-transaction-export-transactions-to-table.el (txs &optional params)
   "Export TXS to table.el.
 
-TXS is a list of `klid-transaction'.  PARAMS is a property list
-of parameters that can influence the conversion.  All parameters
+TXS is a list, and each element within the list is itself a list
+with the same structure as `klid-transaction'.  PARAMS is a property
+list of parameters that can influence the conversion.  All parameters
 from ‘orgtbl-to-generic’ are supported."
   (let ((table (klid-transaction-export-transactions-to-list txs)))
     (if (= (length table) 0)
@@ -128,10 +131,11 @@ from ‘orgtbl-to-generic’ are supported."
     (klid-export-orgtbl-to-table.el table params)))
 
 (defun klid-transaction-export-transactions-to-org (txs &optional params)
-  "Export TXS to table.el with some additional text.
+  "Export TXS to table.el with some additional markup.
 
-TXS is a list of `klid-transaction'.  PARAMS is a property list
-of parameters that can influence the conversion.  All parameters
+TXS is a list, and each element within the list is itself a list
+with the same structure as `klid-transaction'.  PARAMS is a property
+list of parameters that can influence the conversion.  All parameters
 from ‘orgtbl-to-generic’ are supported."
   (with-temp-buffer
     (insert

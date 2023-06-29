@@ -3,7 +3,7 @@
 
 (ert-deftest test-klid-ledger-update-account-ledger ()
   (let* ((tx (make-klid-transaction
-	      :date '(0 0 0 1 1 2020 nil 0 0)
+	      :date '(nil nil nil 1 1 2020 nil -1 nil)
 	      :document "FAV123"
 	      :amount 30000
 	      :description "VyFa"
@@ -28,12 +28,12 @@
     (should (equal
 	     (klid-ledger-record-date
 	      (car (klid-ledger-account-ledger-records account-ledger-debit)))
-	     '(0 0 0 1 1 2020 nil 0 0)))
+	     '(nil nil nil 1 1 2020 nil -1 nil)))
 
     (should (equal
 	     (klid-ledger-record-date
 	      (car (klid-ledger-account-ledger-records account-ledger-credit)))
-	     '(0 0 0 1 1 2020 nil 0 0)))
+	     '(nil nil nil 1 1 2020 nil -1 nil)))
 
     (should (=
 	     (klid-ledger-record-debit-amount
@@ -85,7 +85,7 @@
 
 (ert-deftest test-klid-ledger-general-ledger ()
   (let* ((txs `(,(make-klid-transaction
-		  :date '(0 0 0 1 1 2020 nil 0 0)
+		  :date '(nil nil nil 1 1 2020 nil -1 nil)
 		  :document "FAV123"
 		  :amount 30000
 		  :description "VyFa"
@@ -93,7 +93,7 @@
 		  :credit-account "602000"
 		  :note "123")
 		,(make-klid-transaction
-		  :date '(0 0 0 2 1 2020 nil 0 0)
+		  :date '(nil nil nil 2 1 2020 nil -1 nil)
 		  :document "BV1"
 		  :amount 30000
 		  :description "Přijatá platba"
@@ -121,7 +121,7 @@
   (let ((general-ledger
 	 (klid-ledger-general-ledger
 	  `(,(make-klid-transaction
-	      :date '(0 0 0 1 1 2020 nil 0 0)
+	      :date '(nil nil nil 1 1 2020 nil -1 nil)
 	      :document "FAV123"
 	      :amount 30000.66
 	      :description "VyFa"
@@ -129,7 +129,7 @@
 	      :credit-account "602000"
 	      :note "123")
 	    ,(make-klid-transaction
-	      :date '(0 0 0 2 1 2020 nil 0 0)
+	      :date '(nil nil nil 2 1 2020 nil -1 nil)
 	      :document "BV1"
 	      :amount 30000.34
 	      :description "Přijatá platba"

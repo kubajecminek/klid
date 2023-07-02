@@ -60,32 +60,51 @@ TXS is a list, and each element within the list is itself a list
 with the same structure as `klid-transaction'."
   (sort txs 'klid-transaction-earlier-p))
 
-(defun klid-transaction-parse-list (tx)
-  "Create `klid-transaction' structure from TX.
+(defun klid-transaction-list-parsable-p (list)
+  "Check if the provided LIST is parsable as a `klid-transaction'.
 
-TX must be a list that contains valid transaction values - date
-in DD.MM.YYYY format, accounting document ID (string), non-zero
-amount (either string or number), brief description (string),
-debit account (string), credit account (string) and note (string).
-If the list doesn't hold valid transaction data then this function
-signals `klid-parse-error'"
-  (cond
-   ((not (listp tx)) (signal 'klid-parse-error tx))
-   ((< (length tx) 7) (signal 'klid-parse-error tx))
-   ((not (or (stringp (nth 2 tx)) (numberp (nth 2 tx)))) (signal 'klid-parse-error (nth 2 tx))))
-  (let* ((amount-raw (nth 2 tx))
-	 (amount (if (stringp amount-raw)
-		     (string-to-number amount-raw)
-		   (when (numberp amount-raw) amount-raw))))
-    (when (= amount 0) (signal 'klid-parse-error tx))
-    (make-klid-transaction
-     :date (klid-datetime-csn-01-6910-parse (nth 0 tx))
-     :document (nth 1 tx)
-     :amount amount
-     :description (nth 3 tx)
-     :debit-account (nth 4 tx)
-     :credit-account (nth 5 tx)
-     :note (nth 6 tx))))
+LIST is considered parsable if it satisfies the following conditions:
+- It is a list.
+- It has at least seven elements and all of them are strings.
+- The first element is a date string in ČSN 01 6910 format.
+- The third element is a non-zero number (string).
+
+If the provided list meets all the criteria, this function returns non-nil.
+Otherwise, it returns nil."
+  (and
+   (listp list)
+   (>= (length list) 7)
+   (cl-every #'stringp list)
+   (klid-datetime-csn-01-6910--match
+    klid-datetime-csn-01-6910--full-date-match
+    (nth 0 list))
+   (not (= (string-to-number (nth 2 list)) 0))))
+
+(defun klid-transaction-parse-list (list)
+  "Create `klid-transaction' structure from LIST.
+
+LIST must contain valid transaction values:
+ - Date in DD.MM.YYYY format (string)
+ - Accounting document ID (string)
+ - Non-zero amount (string)
+ - Brief description (string)
+ - Debit account (string)
+ - Credit account (string)
+ - Note (string)
+
+If the LIST does not meet the criteria, this function signals
+`klid-parse-error'."
+  ;; This function is mainly used in conjunction with `org-table-to-lisp'
+  (unless (klid-transaction-list-parsable-p list)
+    (signal 'klid-parse-error list))
+  (make-klid-transaction
+   :date (klid-datetime-csn-01-6910-parse (nth 0 list))
+   :document (nth 1 list)
+   :amount (string-to-number (nth 2 list))
+   :description (nth 3 list)
+   :debit-account (nth 4 list)
+   :credit-account (nth 5 list)
+   :note (nth 6 list)))
 
 (defun klid-transaction-parse-lists (data)
   "Parse transactions nested in DATA list.
@@ -97,7 +116,8 @@ This function iteratively calls `klid-transaction-parse-list'."
       (condition-case nil
 	  (push (klid-transaction-parse-list elt) txs)
 	(klid-parse-error (setq skipped (1+ skipped)))))
-    (unless (= skipped 0) (message "Skipped %d records due to an error" skipped))
+    (unless (= skipped 0)
+      (message "Skipped %d records due to an error" skipped))
     (klid-transaction-sort-by-date txs)))
 
 (defun klid-transaction-export-transactions-to-list (txs)
@@ -108,7 +128,8 @@ with the same structure as `klid-transaction'."
   (mapcar (lambda (tx)
 	    (let ((new-tx (copy-sequence tx)))
 	      (setf (klid-transaction-date new-tx)
-		    (klid-datetime-csn-01-6910-to-string (klid-transaction-date new-tx)))
+		    (klid-datetime-csn-01-6910-to-string
+		     (klid-transaction-date new-tx)))
 	      (setf (klid-transaction-amount new-tx)
 		    (number-to-string (klid-transaction-amount new-tx)))
 	      new-tx))

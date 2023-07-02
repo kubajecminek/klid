@@ -165,7 +165,8 @@ output string in `org-mode' markup."
   ;; TODO: Implement other reader functions other than `klid-export-table.el-to-list'
   (klid-mode--measure-time
    (let ((txs (klid-transaction-parse-lists
-	       (klid-export-table.el-to-list))))
+	       (klid-filter-org-hline-symbol
+		(klid-export-table.el-to-list)))))
      (with-current-buffer
 	 (get-buffer-create klid-mode-output-buffer)
        (save-excursion

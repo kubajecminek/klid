@@ -25,14 +25,13 @@
 ;;; Commentary:
 ;; This module serves as the entrypoint to the whole "klid" accounting
 ;; system.  It mainly provides key data structure that represents the
-;; transaction and a set of utilities for reading, sorting, parsing and
-;; exporting the transactions.
+;; transaction and a set of utilities for reading, sorting, and parsing
+;; the transactions.
 
 ;;; Code:
 
 (require 'cl-lib)
 (require 'klid-datetime)
-(require 'klid-export)
 
 (cl-defstruct (klid-transaction
                (:type list))
@@ -74,13 +73,13 @@ Otherwise, it returns nil."
   (and
    (listp list)
    (>= (length list) 7)
-   (cl-every #'stringp list)
+   (list-of-strings-p list)
    (klid-datetime-csn-01-6910--match
     klid-datetime-csn-01-6910--full-date-match
     (nth 0 list))
    (not (= (string-to-number (nth 2 list)) 0))))
 
-(defun klid-transaction-parse-list (list)
+(defun klid-transaction-from-list (list)
   "Create `klid-transaction' structure from LIST.
 
 LIST must contain valid transaction values:
@@ -106,64 +105,21 @@ If the LIST does not meet the criteria, this function signals
    :credit-account (nth 5 list)
    :note (nth 6 list)))
 
-(defun klid-transaction-parse-lists (data)
-  "Parse transactions nested in DATA list.
+(defun klid-transaction-from-list-iter (list-of-lists)
+  "Convert LIST-OF-LISTS into list of `klid-transaction' structures.
 
-This function iteratively calls `klid-transaction-parse-list'."
+This function iteratively calls `klid-transaction-from-list' for
+every element of LIST-OF-LISTS.  Final list of transactions is also
+sorted by date."
   (let ((txs '())
 	(skipped 0))
-    (dolist (elt data)
+    (dolist (elt list-of-lists)
       (condition-case nil
-	  (push (klid-transaction-parse-list elt) txs)
+	  (push (klid-transaction-from-list elt) txs)
 	(klid-parse-error (setq skipped (1+ skipped)))))
     (unless (= skipped 0)
       (message "Skipped %d records due to an error" skipped))
     (klid-transaction-sort-by-date txs)))
-
-(defun klid-transaction-export-transactions-to-list (txs)
-  "Export TXS to list format compatible with `org-table-export' function.
-
-TXS is a list, and each element within the list is itself a list
-with the same structure as `klid-transaction'."
-  (mapcar (lambda (tx)
-	    (let ((new-tx (copy-sequence tx)))
-	      (setf (klid-transaction-date new-tx)
-		    (klid-datetime-csn-01-6910-to-string
-		     (klid-transaction-date new-tx)))
-	      (setf (klid-transaction-amount new-tx)
-		    (number-to-string (klid-transaction-amount new-tx)))
-	      new-tx))
-	  txs))
-
-(defun klid-transaction-export-transactions-to-table.el (txs &optional params)
-  "Export TXS to table.el.
-
-TXS is a list, and each element within the list is itself a list
-with the same structure as `klid-transaction'.  PARAMS is a property
-list of parameters that can influence the conversion.  All parameters
-from ‘orgtbl-to-generic’ are supported."
-  (let ((table (klid-transaction-export-transactions-to-list txs)))
-    (if (= (length table) 0)
-	""
-      (push 'hline table)
-      (push '("DATUM" "DOKLAD" "ČÁSTKA" "POPIS" "MD" "DAL" "POZNÁMKA") table)
-      (push 'hline table))
-    (nconc table (list 'hline))
-    (klid-export-orgtbl-to-table.el table params)))
-
-(defun klid-transaction-export-transactions-to-org (txs &optional params)
-  "Export TXS to table.el with some additional markup.
-
-TXS is a list, and each element within the list is itself a list
-with the same structure as `klid-transaction'.  PARAMS is a property
-list of parameters that can influence the conversion.  All parameters
-from ‘orgtbl-to-generic’ are supported."
-  (with-temp-buffer
-    (insert
-     "* Účetní deník\n"
-     (klid-transaction-export-transactions-to-table.el txs params)
-     "\n\n")
-    (buffer-string)))
 
 (provide 'klid-transaction)
 

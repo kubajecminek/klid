@@ -28,6 +28,9 @@
 ;;; Code:
 
 (require 'org-table)
+(require 'klid-transaction)
+(require 'klid-ledger)
+(require 'klid-accounts)
 
 (defun klid-export-orgtbl-to-table.el (table &optional params)
   "Convert the `orgtbl-mode' TABLE into a table.el.
@@ -52,6 +55,147 @@ Comitted as 4c01b0deee1 to master branch."
     (buffer-string)))
 
 (defalias 'klid-export-table.el-to-list 'org-table-to-lisp)
+
+(defun klid-export-transactions-to-list (txs)
+  "Export TXS to list format compatible with `org-table-export' function.
+
+TXS is a list, and each element within the list is itself a list
+with the same structure as `klid-transaction'."
+  (mapcar (lambda (tx)
+	    (let ((new-tx (copy-sequence tx)))
+	      (setf (klid-transaction-date new-tx)
+		    (klid-datetime-csn-01-6910-to-string
+		     (klid-transaction-date new-tx)))
+	      (setf (klid-transaction-amount new-tx)
+		    (number-to-string (klid-transaction-amount new-tx)))
+	      new-tx))
+	  txs))
+
+(defun klid-export-transactions-to-table.el (txs &optional params)
+  "Export TXS to table.el.
+
+TXS is a list, and each element within the list is itself a list
+with the same structure as `klid-transaction'.  PARAMS is a property
+list of parameters that can influence the conversion.  All parameters
+from ‘orgtbl-to-generic’ are supported."
+  (let ((table (klid-export-transactions-to-list txs)))
+    (if (= (length table) 0)
+	""
+      (push 'hline table)
+      (push '("DATUM" "DOKLAD" "ČÁSTKA" "POPIS" "MD" "DAL" "POZNÁMKA") table)
+      (push 'hline table))
+    (nconc table (list 'hline))
+    (klid-export-orgtbl-to-table.el table params)))
+
+(defun klid-export-transactions-to-org (txs &optional params)
+  "Export TXS to table.el with some additional markup.
+
+TXS is a list, and each element within the list is itself a list
+with the same structure as `klid-transaction'.  PARAMS is a property
+list of parameters that can influence the conversion.  All parameters
+from ‘orgtbl-to-generic’ are supported."
+  (with-temp-buffer
+    (insert
+     "* Účetní deník\n"
+     (klid-export-transactions-to-table.el txs params)
+     "\n\n")
+    (buffer-string)))
+
+(defun klid-export-account-subledger-to-table.el (general-ledger account &optional params)
+  "Export ACCOUNT subledger from GENERAL-LEDGER to table.el.
+
+GENERAL-LEDGER is a hash-table where each account is mapped to its corresponding
+`klid-ledger-account-subledger' structure.  PARAMS is a property list of parameters
+that can influence the conversion.  All parameters from ‘orgtbl-to-generic’ are
+supported."
+  (let ((account-subledger (gethash account general-ledger))
+	(table nil))
+    (if (null account-subledger)
+	""
+      (push 'hline table)
+      (push '("DATUM" "DOKLAD" "POPIS" "MD [KČ]" "DAL [KČ]" "SALDO [KČ]" "PROTIÚČET") table)
+      (push 'hline table)
+      (dolist (record (klid-ledger-account-subledger-records account-subledger))
+	(push
+	 `(,(klid-datetime-csn-01-6910-to-string (klid-ledger-record-date record))
+	   ,(klid-ledger-record-document record)
+	   ,(klid-ledger-record-description record)
+	   ,(number-to-string (klid-ledger-record-debit-amount record))
+	   ,(number-to-string (klid-ledger-record-credit-amount record))
+	   ,(number-to-string (klid-ledger-record-balance record))
+	   ,(klid-ledger-record-counter-account record))
+	 table))
+      (push 'hline table)
+      (push `(""
+	      ""
+	      "SUMA"
+	      ,(number-to-string
+		(klid-ledger-account-subledger-total-debit account-subledger))
+	      ,(number-to-string
+		(klid-ledger-account-subledger-total-credit account-subledger))
+	      ,(number-to-string
+		(klid-ledger-account-subledger-total-balance account-subledger))
+	      "")
+	    table)
+      (push 'hline table)
+      (setq table (nreverse table))
+      (klid-export-orgtbl-to-table.el table params))))
+
+(defun klid-export-general-ledger-to-org
+    (general-ledger &optional account-prefix params)
+  "Export subledgers from GENERAL-LEDGER to table.el with some additional markup.
+
+This function exports subledgers from GENERAL-LEDGER that contain ACCOUNT-PREFIX.
+GENERAL-LEDGER is a hash-table where each account is mapped to its corresponding
+`klid-ledger-account-subledger' structure.  PARAMS is a property list of parameters
+that can influence the conversion.  All parameters from ‘orgtbl-to-generic’ are
+supported."
+  (let* ((keys nil)
+	 (sorted-keys nil)
+	 (prefix (or account-prefix "")))
+    (maphash
+     (lambda (k v) (when (string-prefix-p prefix k) (push k keys)))
+     general-ledger)
+    (setq sorted-keys (klid-accounts-sort keys))
+    (with-temp-buffer
+      (insert "* Hlavní kniha\n")
+      (dolist (acc sorted-keys)
+	(insert
+	 (format "** Účet: %s\n\n" acc)
+	 (klid-export-account-subledger-to-table.el general-ledger acc params)
+	 "\n\n"))
+      (buffer-string))))
+
+(defun klid-export-accounts-to-table.el (accounts &optional params)
+  "Export ACCOUNTS to table.el.
+
+ACCOUNTS is a list of strings.  PARAMS is a property list
+of parameters that can influence the conversion.  All parameters
+from ‘orgtbl-to-generic’ are supported."
+  (let ((table nil))
+    (push 'hline table)
+    (push '("POŘADOVÉ ČÍSLO" "ÚČET") table)
+    (push 'hline table)
+    (dotimes (i (length accounts))
+      (push `(,(format "%s" (number-to-string (1+ i)))
+	      ,(nth i accounts))
+	    table))
+    (push 'hline table)
+    (setq table (nreverse table))
+    (klid-export-orgtbl-to-table.el table params)))
+
+(defun klid-export-accounts-to-org (accounts &optional params)
+  "Export ACCOUNTS to table.el with some additional markup.
+
+ACCOUNTS is a list of strings.  PARAMS is a property list
+of parameters that can influence the conversion.  All parameters
+from ‘orgtbl-to-generic’ are supported."
+  (with-temp-buffer
+    (insert
+     "* Seznam použitých účtů\n"
+     (klid-export-accounts-to-table.el accounts params)
+     "\n\n")
+    (buffer-string)))
 
 (provide 'klid-export)
 

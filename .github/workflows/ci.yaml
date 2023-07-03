@@ -19,6 +19,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Run tests
         run: 'emacs -batch -Q -L . \
-              -l klid-mode.el -l klid-datetime.el -l klid-transaction.el -l klid-filter.el -l klid-ledger.el \
-              -l klid-accounts.el -l test/klid-datetime-tests.el -l test/klid-filter-tests.el -l test/klid-ledger-tests.el -l test/klid-transaction-tests.el \
+              -l klid-mode.el -l klid-datetime.el -l klid-transaction.el -l klid-filter.el -l klid-ledger.el -l klid-export.el \
+              -l klid-accounts.el -l test/klid-datetime-tests.el -l test/klid-filter-tests.el -l test/klid-ledger-tests.el \
+	      -l test/klid-transaction-tests.el -l test/klid-export-tests.el \
               -f ert-run-tests-batch-and-exit'

@@ -30,7 +30,6 @@
 
 (require 'cl-lib)
 (require 'klid-transaction)
-(require 'klid-export)
 
 (defun klid-accounts-sort (accounts)
   "Sort ACCOUNTS using `string-lessp' predicate.
@@ -49,37 +48,6 @@ list of strings."
       (push (klid-transaction-debit-account tx) accounts)
       (push (klid-transaction-credit-account tx) accounts))
     (klid-accounts-sort (delete-dups accounts))))
-
-(defun klid-accounts-export-to-table.el (accounts &optional params)
-  "Export ACCOUNTS to table.el.
-
-ACCOUNTS is a list of strings.  PARAMS is a property list
-of parameters that can influence the conversion.  All parameters
-from ‘orgtbl-to-generic’ are supported."
-  (let ((table nil))
-    (push 'hline table)
-    (push '("POŘADOVÉ ČÍSLO" "ÚČET") table)
-    (push 'hline table)
-    (dotimes (i (length accounts))
-      (push `(,(format "%s" (number-to-string (1+ i)))
-	      ,(nth i accounts))
-	    table))
-    (push 'hline table)
-    (setq table (nreverse table))
-    (klid-export-orgtbl-to-table.el table params)))
-
-(defun klid-accounts-export-to-org (accounts &optional params)
-  "Export ACCOUNTS to table.el with some additional markup.
-
-ACCOUNTS is a list of strings.  PARAMS is a property list
-of parameters that can influence the conversion.  All parameters
-from ‘orgtbl-to-generic’ are supported."
-  (with-temp-buffer
-    (insert
-     "* Seznam použitých účtů\n"
-     (klid-accounts-export-to-table.el accounts params)
-     "\n\n")
-    (buffer-string)))
 
 (provide 'klid-accounts)
 

@@ -28,7 +28,6 @@
 ;;; Code:
 
 (require 'seq)
-(require 'org)
 (require 'klid-transaction)
 
 (defun klid-filter-transactions-by-date (txs &optional from to)

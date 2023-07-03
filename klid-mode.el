@@ -102,7 +102,7 @@ This function takes transactions at point and displays the result in
   (interactive "sAccount prefix: ")
   (klid-mode--display
    #'(lambda (txs)
-       (klid-transaction-export-transactions-to-org
+       (klid-export-transactions-to-org
 	(klid-filter-transactions-by-account txs account-prefix)))))
 
 (defun klid-mode-filter-by-date (from to)
@@ -114,7 +114,7 @@ at point remain unchanged."
   (interactive "sFrom (DD-MM-YYYY): \nsTo (DD-MM-YYYY):")
   (klid-mode--display
    #'(lambda (txs)
-       (klid-transaction-export-transactions-to-org
+       (klid-export-transactions-to-org
 	(klid-filter-transactions-by-date txs from to)))))
 
 (defun klid-mode-general-ledger (account-prefix)
@@ -122,7 +122,7 @@ at point remain unchanged."
   (interactive "sAccount prefix: ")
   (klid-mode--display
    #'(lambda (txs)
-       (klid-ledger-export-general-ledger-to-org
+       (klid-export-general-ledger-to-org
 	(klid-ledger-general-ledger txs)
 	account-prefix))))
 
@@ -131,7 +131,7 @@ at point remain unchanged."
   (interactive)
   (klid-mode--display
    #'(lambda (txs)
-       (klid-accounts-export-to-org
+       (klid-export-accounts-to-org
 	(klid-accounts-unique txs)))))
 
 (defun klid-mode-all-reports ()
@@ -140,9 +140,9 @@ at point remain unchanged."
   (klid-mode--display
    #'(lambda (txs)
        (concat
-	(klid-transaction-export-transactions-to-org txs)
-	(klid-ledger-export-general-ledger-to-org (klid-ledger-general-ledger txs) "")
-	(klid-accounts-export-to-org (klid-accounts-unique txs))))))
+	(klid-export-transactions-to-org txs)
+	(klid-export-general-ledger-to-org (klid-ledger-general-ledger txs) "")
+	(klid-export-accounts-to-org (klid-accounts-unique txs))))))
 
 (defmacro klid-mode--measure-time (&rest body)
   "Measure the time it takes to evaluate BODY.
@@ -164,7 +164,7 @@ TRANSFORMATION is a function that accepts a list of `klid-transaction' and retur
 output string in `org-mode' markup."
   ;; TODO: Implement other reader functions other than `klid-export-table.el-to-list'
   (klid-mode--measure-time
-   (let ((txs (klid-transaction-parse-lists
+   (let ((txs (klid-transaction-from-list-iter
 	       (klid-filter-org-hline-symbol
 		(klid-export-table.el-to-list)))))
      (with-current-buffer

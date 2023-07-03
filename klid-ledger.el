@@ -26,7 +26,7 @@
 ;; General ledger is a bookkeeping ledger in which accounting data are
 ;; posted from journals [1].  General ledger is in our case a hash-table
 ;; where each key is the account (string) and value is
-;; `klid-ledger-account-ledger' structure.  This structure contains total
+;; `klid-ledger-account-subledger' structure.  This structure contains total
 ;; debit amount, total credit amount, as well as total balance.  Additionally,
 ;; this structure contains all records found in the underlying journal
 ;; (of type `klid-ledger-record') for this given account.  In practice, this is
@@ -38,7 +38,6 @@
 
 (require 'cl-lib)
 (require 'klid-transaction)
-(require 'klid-accounts)
 
 (defun klid-ledger-calc (sym &rest numbers)
   "Perform basic arithmetic operations with `calc' precision.
@@ -61,7 +60,7 @@ The function returns the result as a number."
 		 (list (number-to-string last-elem))))))
     (string-to-number (calc-eval expr))))
 
-(cl-defstruct (klid-ledger-account-ledger
+(cl-defstruct (klid-ledger-account-subledger
 	       (:type list))
   (records '() :documentation "List of ledger records for an account.")
   (total-debit 0 :documentation "Total debit amount for an account.")
@@ -78,43 +77,43 @@ The function returns the result as a number."
   (balance nil :documentation "Balance for the ledger record.")
   (counter-account nil :documentation "Counter account for the ledger record."))
 
-;; Hashmap - KEY = account, VAL = account-ledger
+;; Hashmap - KEY = account, VAL = account-subledger
 (defun klid-ledger-general-ledger (txs)
   "Create the general ledger from TXS.
 
 TXS is a list, and each element within the list is itself a list
 with the same structure as `klid-transaction'.  This function returns
 a hash-table where each account is mapped to its corresponding
-`klid-ledger-account-ledger' structure."
+`klid-ledger-account-subledger' structure."
   (let ((general-ledger (make-hash-table :test 'equal)))
     (dolist (tx txs)
-      (let ((dflt (make-klid-ledger-account-ledger)))
-        ;; Update debit account ledger
-        (let ((account-ledger (gethash
-			       (klid-transaction-debit-account tx)
-			       general-ledger
-			       ;; Set default value
-			       dflt)))
+      (let ((dflt (make-klid-ledger-account-subledger)))
+        ;; Update debit account subledger
+        (let ((account-subledger (gethash
+				  (klid-transaction-debit-account tx)
+				  general-ledger
+				  ;; Set default value
+				  dflt)))
           (puthash (klid-transaction-debit-account tx)
-                   (klid-ledger-update-account-ledger tx account-ledger t)
+                   (klid-ledger-update-account-subledger tx account-subledger t)
                    general-ledger))
-        ;; Update credit account ledger
-        (let ((account-ledger (gethash
-			       (klid-transaction-credit-account tx)
-			       general-ledger
-			       ;; Set default value
-			       dflt)))
+        ;; Update credit account subledger
+        (let ((account-subledger (gethash
+				  (klid-transaction-credit-account tx)
+				  general-ledger
+				  ;; Set default value
+				  dflt)))
           (puthash (klid-transaction-credit-account tx)
-                   (klid-ledger-update-account-ledger tx account-ledger nil)
+                   (klid-ledger-update-account-subledger tx account-subledger nil)
                    general-ledger))))
     general-ledger))
 
-(defun klid-ledger-update-account-ledger (tx account-ledger debit-p)
-  "Update the account ledger with a new transaction record.
+(defun klid-ledger-update-account-subledger (tx account-subledger debit-p)
+  "Update the account subledger with a new transaction record.
 
-Returns the updated account-ledger of type `klid-ledger-account-ledger'.
+Returns the updated account-subledger of type `klid-ledger-account-subledger'.
 TX is transaction to be added to the ledger of type `klid-transaction',
-ACCOUNT-LEDGER is the current account-ledger, and DEBIT-P is a boolean
+ACCOUNT-SUBLEDGER is the current account-subledger, and DEBIT-P is a boolean
 indicating whether the update is a debit or credit."
   (let* ((amount (klid-transaction-amount tx))
          (record (make-klid-ledger-record
@@ -129,88 +128,23 @@ indicating whether the update is a debit or credit."
          (total-debit
 	  (klid-ledger-calc
 	   '+
-	   (klid-ledger-account-ledger-total-debit account-ledger)
+	   (klid-ledger-account-subledger-total-debit account-subledger)
 	   (if debit-p amount 0)))
          (total-credit
 	  (klid-ledger-calc
 	   '+
-	   (klid-ledger-account-ledger-total-credit account-ledger)
+	   (klid-ledger-account-subledger-total-credit account-subledger)
 	   (if (not debit-p) amount 0)))
          (total-balance
 	  (klid-ledger-calc
 	   '-
 	   total-debit
 	   total-credit)))
-    (make-klid-ledger-account-ledger
-     :records (append (klid-ledger-account-ledger-records account-ledger) (list record))
+    (make-klid-ledger-account-subledger
+     :records (append (klid-ledger-account-subledger-records account-subledger) (list record))
      :total-debit total-debit
      :total-credit total-credit
      :total-balance total-balance)))
-
-(defun klid-ledger-export-account-to-table.el (general-ledger account &optional params)
-  "Export ACCOUNT subledger from GENERAL-LEDGER to table.el.
-
-GENERAL-LEDGER is a hash-table where each account is mapped to its corresponding
-`klid-ledger-account-ledger' structure.  PARAMS is a property list of parameters
-that can influence the conversion.  All parameters from ‘orgtbl-to-generic’ are
-supported."
-  (let ((account-ledger (gethash account general-ledger))
-	(table nil))
-    (if (null account-ledger)
-	""
-      (push 'hline table)
-      (push '("DATUM" "DOKLAD" "POPIS" "MD [KČ]" "DAL [KČ]" "SALDO [KČ]" "PROTIÚČET") table)
-      (push 'hline table)
-      (dolist (record (klid-ledger-account-ledger-records account-ledger))
-	(push
-	 `(,(klid-datetime-csn-01-6910-to-string (klid-ledger-record-date record))
-	   ,(klid-ledger-record-document record)
-	   ,(klid-ledger-record-description record)
-	   ,(number-to-string (klid-ledger-record-debit-amount record))
-	   ,(number-to-string (klid-ledger-record-credit-amount record))
-	   ,(number-to-string (klid-ledger-record-balance record))
-	   ,(klid-ledger-record-counter-account record))
-	 table))
-      (push 'hline table)
-      (push `(""
-	      ""
-	      "SUMA"
-	      ,(number-to-string
-		(klid-ledger-account-ledger-total-debit account-ledger))
-	      ,(number-to-string
-		(klid-ledger-account-ledger-total-credit account-ledger))
-	      ,(number-to-string
-		(klid-ledger-account-ledger-total-balance account-ledger))
-	      "")
-	    table)
-      (push 'hline table)
-      (setq table (nreverse table))
-      (klid-export-orgtbl-to-table.el table params))))
-
-(defun klid-ledger-export-general-ledger-to-org
-    (general-ledger &optional account-prefix params)
-  "Export subledgers from GENERAL-LEDGER to table.el with some additional markup.
-
-This function exports subledgers from GENERAL-LEDGER that contain ACCOUNT-PREFIX.
-GENERAL-LEDGER is a hash-table where each account is mapped to its corresponding
-`klid-ledger-account-ledger' structure.  PARAMS is a property list of parameters
-that can influence the conversion.  All parameters from ‘orgtbl-to-generic’ are
-supported."
-  (let* ((keys nil)
-	 (sorted-keys nil)
-	 (prefix (or account-prefix "")))
-    (maphash
-     (lambda (k v) (when (string-prefix-p prefix k) (push k keys)))
-     general-ledger)
-    (setq sorted-keys (klid-accounts-sort keys))
-    (with-temp-buffer
-      (insert "* Hlavní kniha\n")
-      (dolist (acc sorted-keys)
-	(insert
-	 (format "** Účet: %s\n\n" acc)
-	 (klid-ledger-export-account-to-table.el general-ledger acc params)
-	 "\n\n"))
-      (buffer-string))))
 
 (provide 'klid-ledger)
 

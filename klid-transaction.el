@@ -73,7 +73,7 @@ Otherwise, it returns nil."
   (and
    (listp list)
    (>= (length list) 7)
-   (list-of-strings-p list)
+   (cl-every #'stringp list)
    (klid-datetime-csn-01-6910--match
     klid-datetime-csn-01-6910--full-date-match
     (nth 0 list))
@@ -108,9 +108,8 @@ If the LIST does not meet the criteria, this function signals
 (defun klid-transaction-from-list-iter (list-of-lists)
   "Convert LIST-OF-LISTS into list of `klid-transaction' structures.
 
-This function iteratively calls `klid-transaction-from-list' for
-every element of LIST-OF-LISTS.  Final list of transactions is also
-sorted by date."
+This function iteratively calls `klid-transaction-from-list'.
+Final list of transactions is also sorted by date."
   (let ((txs '())
 	(skipped 0))
     (dolist (elt list-of-lists)

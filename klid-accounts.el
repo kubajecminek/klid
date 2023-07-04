@@ -23,8 +23,8 @@
 
 
 ;;; Commentary:
-;; This module offers a range of utilities for sorting, filtering, and
-;; outputting accounts utilized in accounting transactions.
+;; This module offers a range of utilities for sorting and filtering
+;; accounts utilized in accounting transactions.
 
 ;;; Code:
 

@@ -68,7 +68,7 @@
 (require 'klid-ledger)
 (require 'klid-accounts)
 
-(defconst klid-mode-version "0.2.0"
+(defconst klid-mode-version "0.2.1"
   "The version of `klid' package.")
 
 (defcustom klid-mode-output-buffer "*klid-output*"

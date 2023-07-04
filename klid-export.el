@@ -57,7 +57,7 @@ Comitted as 4c01b0deee1 to master branch."
 (defalias 'klid-export-table.el-to-list 'org-table-to-lisp)
 
 (defun klid-export-transactions-to-list (txs)
-  "Export TXS to list format compatible with `org-table-export' function.
+  "Export TXS to list format compatible with `orgtbl-to-generic' function.
 
 TXS is a list, and each element within the list is itself a list
 with the same structure as `klid-transaction'."

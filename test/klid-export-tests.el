@@ -1,4 +1,5 @@
 (require 'ert)
+(require 'subr-x)
 (require 'klid-export)
 
 (ert-deftest test-klid-export-account-subledger-to-table.el ()

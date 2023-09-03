@@ -66,7 +66,6 @@
 (require 'klid-transaction)
 (require 'klid-filter)
 (require 'klid-ledger)
-(require 'klid-accounts)
 
 (defconst klid-mode-version "0.2.1"
   "The version of `klid' package.")
@@ -85,7 +84,7 @@
 	    (define-key map (kbd "C-c k f a") 'klid-mode-filter-by-account)
 	    (define-key map (kbd "C-c k f d") 'klid-mode-filter-by-date)
 	    (define-key map (kbd "C-c k g") 'klid-mode-general-ledger)
-	    (define-key map (kbd "C-c k l") 'klid-mode-list-accounts)
+	    (define-key map (kbd "C-c k l") 'klid-mode-chart-of-accounts)
 	    (define-key map (kbd "C-c k a") 'klid-mode-all-reports)
             map))
 
@@ -126,13 +125,12 @@ at point remain unchanged."
 	(klid-ledger-general-ledger txs)
 	account-prefix))))
 
-(defun klid-mode-list-accounts ()
-  "Display the list of all accounts used on either debit or credit side."
+(defun klid-mode-chart-of-accounts ()
   (interactive)
   (klid-mode--display
    #'(lambda (txs)
-       (klid-export-accounts-to-org
-	(klid-accounts-unique txs)))))
+       (klid-export-chart-of-accounts-to-org
+	(klid-ledger-general-ledger txs)))))
 
 (defun klid-mode-all-reports ()
   "Generate key accounting reports."
@@ -142,7 +140,7 @@ at point remain unchanged."
        (concat
 	(klid-export-transactions-to-org txs)
 	(klid-export-general-ledger-to-org (klid-ledger-general-ledger txs) "")
-	(klid-export-accounts-to-org (klid-accounts-unique txs))))))
+	(klid-export-chart-of-accounts-to-org (klid-ledger-general-ledger txs))))))
 
 (defmacro klid-mode--measure-time (&rest body)
   "Measure the time it takes to evaluate BODY.

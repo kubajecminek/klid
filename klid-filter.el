@@ -51,10 +51,10 @@ The function returns a new list containing the filtered transactions."
 	      ((stringp to) (klid-datetime-to-timestamp (klid-datetime-csn-01-6910-parse to)))
 	      (t (klid-datetime-to-timestamp to)))))
     (seq-filter
-     (lambda (elt)
-       (and
-	(>= (klid-datetime-to-timestamp (klid-transaction-date elt)) start)
-	(<= (klid-datetime-to-timestamp (klid-transaction-date elt)) end)))
+     #'(lambda (elt)
+	 (and
+	  (>= (klid-datetime-to-timestamp (klid-transaction-date elt)) start)
+	  (<= (klid-datetime-to-timestamp (klid-transaction-date elt)) end)))
      txs)))
 
 (defun klid-filter-transactions-by-account (txs account-prefix)
@@ -68,10 +68,10 @@ internally.
 
 The function returns a new list containing the filtered transactions."
   (seq-filter
-   (lambda (elt)
-     (or
-      (string-prefix-p account-prefix (klid-transaction-debit-account elt))
-      (string-prefix-p account-prefix (klid-transaction-credit-account elt))))
+   #'(lambda (elt)
+       (or
+	(string-prefix-p account-prefix (klid-transaction-debit-account elt))
+	(string-prefix-p account-prefix (klid-transaction-credit-account elt))))
    txs))
 
 (defun klid-filter-org-hline-symbol (table)
@@ -79,7 +79,7 @@ The function returns a new list containing the filtered transactions."
 
 TABLE is a list, each entry either the symbol `hline' for a horizontal
 separator line, or a list of fields for that line."
-  (seq-filter (lambda (elt) (not (symbolp elt))) table))
+  (seq-filter #'(lambda (elt) (not (symbolp elt))) table))
 
 (provide 'klid-filter)
 

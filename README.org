@@ -53,7 +53,7 @@ You can invoke any ~klid-mode~ command with the table at point.
 | klid-mode-filter-by-account | C-c k f a       |
 | klid-mode-filter-by-date    | C-c k f d       |
 | klid-mode-general-ledger    | C-c k g         |
-| klid-mode-list-accounts     | C-c k l         |
+| klid-mode-chart-of-accounts | C-c k l         |
 | klid-mode-all-reports       | C-c k a         |
 
 ** License

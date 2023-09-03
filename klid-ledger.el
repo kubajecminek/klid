@@ -146,6 +146,20 @@ indicating whether the update is a debit or credit."
      :total-credit total-credit
      :total-balance total-balance)))
 
+(defun klid-ledger-sort (accounts)
+  "Sort ACCOUNTS using `string-lessp' predicate.
+
+ACCOUNTS is a list of strings."
+  (cl-sort accounts 'string-lessp :key 'downcase))
+
+(defun klid-ledger-get-keys (general-ledger)
+  "Get sorted list of all keys found in GENERAL-LEDGER."
+  (let* ((keys '()))
+    (maphash
+     (lambda (k v) (push k keys))
+     general-ledger)
+    (klid-ledger-sort keys)))
+
 (provide 'klid-ledger)
 
 ;;; klid-ledger.el ends here
